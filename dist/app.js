@@ -68,7 +68,7 @@ function renderSubjects() {
   const term = SEMESTERS.find(s => s.id === editingSemester());
   return `<div class="panel-inner">
     <div class="semester-tabs" role="group" aria-label="${target ? '목표' : '현재'} 성적 입력 학기">${configs.map(s => `<button data-semester="${s.id}" class="${s.id === editingSemester() ? 'active' : ''}" aria-label="${s.label}" aria-pressed="${s.id === editingSemester()}"><span>${s.grade}학년</span> <span>${s.id[2]}학기</span></button>`).join('')}</div>
-    ${target ? '<p class="target-note">이 학기에 받고 싶은 성취도와 원점수를 입력하세요.</p><form class="target-fill" id="target-fill-form"><label>일반교과<select name="achievement" aria-label="목표 일괄 성취도"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></label><label>원점수<input name="raw" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0–100" aria-label="목표 일괄 원점수" required></label><label>체육·예술<select name="arts" aria-label="목표 일괄 체육예술 성취도"><option>A</option><option>B</option><option>C</option></select></label><button type="submit" class="button secondary">이 학기 전체 적용</button></form>' : ''}
+    ${target ? '<p class="target-note">목표를 입력하지 않은 학기는 현재 성적 유지로 계산합니다.</p>' : ''}
     <div class="semester-topline"><span>일반교과</span><span class="muted">${term.label} · ${term.max}점 만점</span></div>
     <table class="grade-table"><thead><tr><th scope="col">과목</th><th scope="col">성취도</th><th scope="col">원점수</th><th scope="col">이수</th></tr></thead><tbody>${subjectRows('subjects')}</tbody></table>
     <button class="text-button add-subject" data-action="add-subject">+ 이수 과목 추가</button>
@@ -104,6 +104,7 @@ function renderActivities() {
 function renderEditor() {
   document.querySelectorAll('[data-tab][role=tab]').forEach(el => { const selected = el.dataset.tab === tab; el.setAttribute('aria-selected', String(selected)); el.tabIndex = selected ? 0 : -1; });
   $('#editor-panel').setAttribute('aria-labelledby', `tab-${tab}`);
+  $('#editor-panel').classList.toggle('target-editor', tab === 'targets');
   $('#editor-panel').innerHTML = ['subjects', 'targets'].includes(tab) ? renderSubjects() : tab === 'attendance' ? renderAttendance() : renderActivities();
   if (tab === 'activities') renderLeadership();
   markInvalidInputs();
@@ -112,7 +113,6 @@ function renderEditor() {
 
 function markInvalidInputs() {
   document.querySelectorAll('#editor-panel input[type=number]').forEach(el => {
-    if (el.closest('#target-fill-form')) return;
     const invalid = !el.validity.valid;
     el.classList.toggle('invalid', invalid);
     el.setAttribute('aria-invalid', String(invalid));
@@ -120,13 +120,17 @@ function markInvalidInputs() {
   });
 }
 
-function updateEditor(exact, forecast) {
+function updateEditor(exact, forecast, scenario) {
   if (['subjects', 'targets'].includes(tab) && $('#semester-score')) {
-    const current = exact.general.find(s => s.id === editingSemester());
-    $('#semester-score').textContent = formatScore(current.score);
+    const current = tab === 'targets' ? scenario.future.find(s => s.id === targetSemester) : exact.general.find(s => s.id === semester);
+    const complete = tab === 'targets' ? current.generalComplete : current.complete;
+    $('#semester-score').textContent = formatScore(tab === 'targets' ? current.generalScore : current.score);
     const term = state.semesters[editingSemester()];
-    $('#semester-stats').textContent = current.complete ? `${current.count}과목 입력 완료` : term.subjects.some(row => row.included && row.elective) && !term.language ? '선택 외국어를 골라 주세요.' : `${current.count}과목 · 성취도와 원점수를 입력하세요`;
-    document.querySelectorAll('[data-semester]').forEach(el => { const result = exact.general.find(s => s.id === el.dataset.semester); el.classList.toggle('complete', result.complete && state.semesters[result.id].arts.every(row => !row.included || row.achievement)); });
+    $('#semester-stats').textContent = complete ? `${current.count}과목 입력 완료` : tab !== 'targets' && term.subjects.some(row => row.included && row.elective) && !term.language ? '선택 외국어를 골라 주세요.' : `${current.count}과목 · 성취도와 원점수를 입력하세요`;
+    document.querySelectorAll('[data-semester]').forEach(el => {
+      const result = (tab === 'targets' ? scenario.future : exact.general).find(s => s.id === el.dataset.semester);
+      el.classList.toggle('complete', result.complete && state.semesters[result.id].arts.every(row => !row.included || row.achievement));
+    });
   }
   if (tab === 'attendance') exact.attendance.forEach((row, i) => {
     if (!$(`#attendance-score-${i}`)) return;
@@ -151,14 +155,15 @@ function update() {
   const exact = calculate(state);
   const f = calculateForecast(state, cutoff);
   const target = calculateScenario(state, cutoff);
-  updateEditor(exact, f);
+  updateEditor(exact, f, target);
   $('#forecast-details').innerHTML = forecastDetails(f);
   $('#academic-score').textContent = formatScore(f.academicScore);
   $('#total-score').textContent = formatScore(f.total);
   $('#target-total-score').textContent = formatScore(target.total);
   $('#target-academic-score').textContent = formatScore(target.academicScore);
-  $('#target-caption').textContent = target.future.every(s => s.complete) ? (target.academicScore === null ? '현재 성적 입력도 마쳐 주세요.' : '출결·학교활동은 현재 보정과 동일') : `${target.future.filter(s => s.complete).length} / ${target.future.length}개 학기 목표 입력 완료`;
-  $('#target-difference').textContent = target.difference === null ? (target.future.every(s => s.complete) ? '현재 성적·출결 입력을 마치면 비교할 수 있어요.' : '남은 학기의 목표 성적을 입력하면 비교할 수 있어요.') : `현재 보정 대비 ${target.difference > 0 ? '+' : ''}${formatScore(target.difference)}점`;
+  $('#target-caption').textContent = '미입력 목표는 현재 성적 유지 · 출결·학교활동은 동일 조건';
+  $('#target-difference').textContent = target.difference === null ? '' : `현재 유지보다 ${target.difference > 0 ? '+' : ''}${formatScore(target.difference)}점`;
+  $('#target-missing').innerHTML = scenarioMissing(f, target).map(item => `<button class="missing-link" data-tab="${item.tab}" ${item.semester ? `data-open-semester="${item.semester}"` : ''}>${esc(item.label)}</button>`).join('');
   $('#target-result').hidden = !target.future.length;
   $('#mobile-total').textContent = formatScore(tab === 'targets' ? target.total : f.total);
   $('#mobile-score-label').textContent = tab === 'targets' ? '목표 달성 시' : '현재 유지 시';
@@ -172,6 +177,22 @@ function update() {
     ['학교활동', f.activities.score, 10, f.activities.score, 10000, f.activities.score],
   ];
   $('#score-breakdown').innerHTML = areas.map(([label, score, max, current, currentMax, goal]) => `<div class="breakdown-row"><div class="breakdown-label"><span>${label}</span><small>/ ${max}점</small></div><div class="breakdown-values"><div><small>현재 유지</small><strong>${formatScore(score)}</strong></div>${target.future.length ? `<div><small>목표 달성</small><strong>${formatScore(goal)}</strong></div>` : ''}</div><p class="breakdown-current">현재 ${formatScore(current)} / ${currentMax ? currentMax / 1000 : '—'}점 · ${percent(current, currentMax)}</p></div>`).join('');
+}
+
+function scenarioMissing(forecast, scenario) {
+  const missing = [];
+  for (const term of forecast.general) {
+    if (!term.complete) missing.push({ tab: 'subjects', semester: term.id, label: term.label + ' 현재 성취도·원점수 입력' });
+    const arts = state.semesters[term.id].arts.filter(row => row.included);
+    if (arts.some(row => !['A', 'B', 'C'].includes(row.achievement))) missing.push({ tab: 'subjects', semester: term.id, label: term.label + ' 현재 체육·예술 입력' });
+  }
+  for (const term of scenario.future) {
+    if (!term.count || (term.generalStarted && !term.generalComplete)) missing.push({ tab: 'targets', semester: term.id, label: term.label + ' 목표 성취도·원점수 확인' });
+    if (term.artsStarted && !term.artsComplete) missing.push({ tab: 'targets', semester: term.id, label: term.label + ' 목표 체육·예술 확인' });
+  }
+  if (forecast.attendanceScore === null) missing.push({ tab: 'attendance', label: '출결 입력 완료하기' });
+  if (forecast.activities.score === null) missing.push({ tab: 'activities', label: '학교활동 입력 확인하기' });
+  return missing;
 }
 
 const percent = (score, max) => score === null || !max ? '—' : `${(score / max * 100).toFixed(1)}%`;
@@ -218,7 +239,13 @@ document.addEventListener('click', event => {
   const el = event.target.closest('button');
   if (!el) return;
   if (el.dataset.semester) { if (tab === 'targets') targetSemester = el.dataset.semester; else semester = el.dataset.semester; renderEditor(); return; }
-  if (el.dataset.tab) { switchTab(el.dataset.tab); return; }
+  if (el.dataset.tab) {
+    if (el.dataset.openSemester) {
+      if (el.dataset.tab === 'targets') targetSemester = el.dataset.openSemester;
+      else semester = el.dataset.openSemester;
+    }
+    switchTab(el.dataset.tab); return;
+  }
   if ('zero' in el.dataset) {
     state.attendance[Number(el.dataset.zero)] = { absence: '0', late: '0', early: '0', missed: '0' };
     renderEditor(); save(); return;
@@ -253,15 +280,6 @@ document.addEventListener('keydown', event => {
 });
 
 document.addEventListener('submit', event => {
-  if (event.target.id === 'target-fill-form') {
-    event.preventDefault();
-    if (!event.target.reportValidity()) return;
-    const data = new FormData(event.target);
-    const term = state.semesters[targetSemester];
-    term.subjects.filter(row => row.included).forEach(row => { row.achievement = data.get('achievement'); row.raw = data.get('raw'); });
-    term.arts.filter(row => row.included).forEach(row => { row.achievement = data.get('arts'); });
-    renderEditor(); save(); return;
-  }
   if (event.target.id !== 'add-subject-form') return;
   event.preventDefault();
   const name = $('#new-subject').value.trim();

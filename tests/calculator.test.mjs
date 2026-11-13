@@ -240,7 +240,7 @@ test('미래 목표를 실제 학기 배점과 체육예술 통합 산식으로 
   s.attendance[1] = { ...noAbsence };
   const baseline = calculateForecast(s, '2-1');
   const actual = structuredClone(s.semesters['2-1']);
-  assert.equal(calculateScenario(s, '2-1').total, null);
+  assert.equal(calculateScenario(s, '2-1').total, baseline.total);
   fill(s, SEMESTERS.slice(2));
   let goal = calculateScenario(s, '2-1');
   assert.equal(goal.generalScore, 115800); // 현재 31.8 + 미래 24 + 30 + 30
@@ -274,4 +274,26 @@ test('목표가 현재 비율과 같으면 보정 점수와 일치하고, 마지
   s.semesters['2-2'].arts.forEach(row => { row.included = false; });
   assert.equal(calculateScenario(s, '2-1').future[0].complete, true);
   assert.equal(calculateScenario(s, '2-1').total, calculate(s).total);
+});
+
+test('한 학기 목표부터 계산하고 미입력 목표를 현재 비율로 보정하며 목표 외국어명은 필수가 아니다', () => {
+  const s = fill(createState(), SEMESTERS.slice(0, 2), 'B', '85');
+  for (const id of ['1-2', '2-1']) s.semesters[id].arts.forEach((row, i) => { row.achievement = ['A', 'B', 'C'][i]; });
+  s.attendance[0] = { ...noAbsence, absence: '1' };
+  s.attendance[1] = { ...noAbsence };
+  const baseline = calculateForecast(s, '2-1');
+  s.semesters['2-2'].subjects.forEach(row => { row.achievement = 'A'; row.raw = '100'; });
+  assert.equal(calculateScenario(s, '2-1').total, 178133);
+  s.semesters['2-2'].arts.forEach(row => { row.achievement = 'A'; });
+  assert.equal(calculateScenario(s, '2-1').total, 179467);
+  assert.equal(calculateForecast(s, '2-1').total, baseline.total);
+  s.semesters['3-1'].subjects[0].achievement = 'A';
+  assert.equal(calculateScenario(s, '2-1').total, null, 'An incomplete entered target needs its missing fields');
+  for (const config of SEMESTERS.slice(2)) {
+    s.semesters[config.id].subjects.forEach(row => { row.achievement = 'A'; row.raw = '100'; });
+    s.semesters[config.id].arts.forEach(row => { row.achievement = 'A'; });
+  }
+  assert.equal(s.semesters['3-1'].language, '');
+  assert.equal(calculateScenario(s, '2-1').total, 189133);
+  assert.equal(calculate(s).generalTotal, null, 'Actual grades still require the selected foreign language');
 });

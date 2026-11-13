@@ -90,16 +90,25 @@ h1 { font-size: 30px; letter-spacing: -1px; line-height: 1.4; }
 .score-value>span { font-size: 16px; margin-left: 6px; color: var(--muted); }
 .score-main p { font-size: 13px; line-height: 1.7; color: var(--muted); }
 .score-main h2, .target-result h2 { font-size: 15px; font-weight: 600; }
-.target-result { margin-top: 18px; padding: 16px 12px; border: 1px solid #c7d8ed; border-radius: 8px; background: #f3f7fd; text-align: center; }
-.target-result .score-value strong { color: #315a94; font-size: 38px; }
+.current-result { border-top: 5px solid var(--teal); background: #f4fbf8; }
+.current-result h2 { color: var(--teal-dark); }
+.target-result { margin-top: 18px; border: 1px solid #a8c3e7; border-top: 5px solid #315a94; background: #f1f6fe; text-align: center; }
+.target-result .score-value strong { color: #315a94; font-size: 44px; }
+.target-result h2 { color: #24497e; font-size: 18px; text-align: left; }
+.score-card-top h2 { font-size: 18px; }
 .target-result p { font-size: 13px; line-height: 1.7; color: var(--muted); }
 .target-result #target-difference { color: #315a94; font-weight: 600; }
 .target-academic { margin: 8px 0 5px; font-size: 12px; color: var(--muted); }
 .target-note { color: #315a94; font-size: 14px; line-height: 1.7; margin: 12px 0; }
-.target-fill { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; gap: 10px; padding: 16px; background: #f3f7fd; border-radius: 8px; margin-bottom: 22px; }
-.target-fill label { display: grid; gap: 6px; min-width: 0; font-size: 13px; }
-.target-fill input, .target-fill select { width: 100%; }
-.target-fill button { grid-column: 1/-1; }
+.target-editor { border-top: 4px solid #315a94; }
+.target-editor .semester-tabs button.active { color: #24497e; background: #eaf2ff; border-color: #315a94; }
+.target-editor .grade-table th { color: #315a94; background: #edf3fc; }
+.editor-tabs #tab-targets[aria-selected=true] { background: #315a94; }
+.missing-inputs { display: grid; gap: 7px; margin-top: 12px; }
+.missing-inputs:empty { display: none; }
+.missing-link { color: #914622; background: #fff5e9; border: 1px solid #e9cbae; border-radius: 6px; padding: 10px; font-size: 13px; line-height: 1.6; text-align: left; min-height: 44px; }
+.result-details { padding: 18px 20px; margin-top: 18px; }
+.result-details summary { cursor: pointer; font-size: 14px; font-weight: 600; }
 .academic-preview { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 12px; border-radius: 8px; background: var(--teal-soft); }
 .academic-preview strong { font-size: 19px; color: var(--teal-dark); font-variant-numeric: tabular-nums; }
 .academic-preview small { color: var(--muted); }

@@ -149,14 +149,21 @@ try {
 
   await click('#tab-targets');
   assert.equal(await evaluate(`document.querySelectorAll('[data-semester]').length`), 3);
-  assert.equal(await evaluate(`document.querySelector('#target-fill-form [name=raw]').classList.contains('invalid')`), false, 'Unused bulk inputs must not show an error');
-  assert.equal(await text('#target-total-score'), '—');
+  assert.equal(await evaluate(`document.querySelector('#target-fill-form')`), null, 'Bulk apply was removed');
+  assert.equal(await text('#target-total-score'), '177.333');
+  assert.equal(await evaluate(`document.querySelector('#total-score').closest('section') === document.querySelector('#target-total-score').closest('section')`), false);
   const baseline = await text('#total-score');
   for (const id of ['2-2', '3-1', '3-2']) {
     await click(`[data-semester="${id}"]`);
-    await input('#target-fill-form [name=raw]', '100');
-    await evaluate(`document.querySelector('#target-fill-form').requestSubmit()`);
-    if (id.startsWith('3')) await input('[data-language]', '생활일본어');
+    const rows = await evaluate(`document.querySelectorAll('[data-kind=subjects][data-field=raw]').length`);
+    for (let i = 0; i < rows; i++) {
+      await input(`[data-kind=subjects][data-index="${i}"][data-field=achievement]`, 'A');
+      await input(`[data-kind=subjects][data-index="${i}"][data-field=raw]`, '100');
+    }
+    // An empty arts target keeps the current arts ratio.
+    if (id === '2-2') assert.equal(await text('#target-total-score'), '180.133');
+    for (let i = 0; i < 3; i++) await input(`[data-kind=arts][data-index="${i}"][data-field=achievement]`, 'A');
+    if (id === '2-2') assert.equal(await text('#target-total-score'), '181.467');
     assert.equal(await text('#total-score'), baseline, 'Future targets must not change the current projection');
   }
   assert.equal(await text('#target-total-score'), '191.133');
@@ -168,6 +175,7 @@ try {
   await click('[data-semester="2-2"]');
   await input('[data-kind=subjects][data-index="0"][data-field=raw]', '101');
   assert.equal(await text('#target-total-score'), '—');
+  assert.match(await text('#target-missing'), /2학년 2학기 목표 성취도·원점수 확인/);
   assert.equal(await text('#total-score'), baseline);
   await input('[data-kind=subjects][data-index="0"][data-field=raw]', '90');
   assert.equal(await text('#target-total-score'), '191.033');

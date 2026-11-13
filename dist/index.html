@@ -25,13 +25,13 @@
         <div id="editor-panel" role="tabpanel" aria-labelledby="tab-subjects"></div>
       </section>
       <aside class="results-column" aria-label="예상 점수">
-        <section class="score-card">
-          <div class="score-card-top"><strong>최종 점수 비교</strong><span id="score-status" class="score-status">입력 중</span></div>
-          <div class="score-main"><h2>현재 성적 유지 시</h2><div class="score-value"><strong id="total-score">—</strong><span>/ 200</span></div><p id="score-caption"></p></div>
+        <section class="score-card current-result" aria-labelledby="current-result-title">
+          <div class="score-card-top"><h2 id="current-result-title">현재 성적 유지</h2><span id="score-status" class="score-status">입력 중</span></div>
+          <div class="score-main"><div class="score-value"><strong id="total-score">—</strong><span>/ 200</span></div><p id="score-caption"></p></div>
           <div class="academic-preview" id="academic-preview"><span>교과 보정 점수</span><div><strong id="academic-score">—</strong><small> / 150점</small></div></div>
-          <div class="target-result" id="target-result"><h2>목표 성적 달성 시</h2><div class="score-value"><strong id="target-total-score">—</strong><span>/ 200</span></div><p id="target-difference"></p><div class="target-academic">목표 교과 <strong id="target-academic-score">—</strong> / 150점</div><p id="target-caption"></p></div>
-          <div class="score-divider"></div><div id="score-breakdown"></div>
         </section>
+        <section class="score-card target-result" id="target-result" aria-labelledby="target-result-title"><h2 id="target-result-title">목표 성적 반영</h2><div class="score-value"><strong id="target-total-score">—</strong><span>/ 200</span></div><p id="target-difference"></p><div class="target-academic">목표 교과 <strong id="target-academic-score">—</strong> / 150점</div><p id="target-caption"></p><div id="target-missing" class="missing-inputs" aria-live="polite"></div></section>
+        <details class="card result-details"><summary>영역별 점수 비교</summary><div id="score-breakdown"></div></details>
       </aside>
     </div>
     <p class="storage-note" id="storage-status"></p>

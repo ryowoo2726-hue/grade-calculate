@@ -122,16 +122,36 @@ export function calculateForecast(state, cutoff) {
 
 export function calculateScenario(state, cutoff) {
   const forecast = calculateForecast(state, cutoff);
-  const result = calculate(state);
   const future = SEMESTERS.slice(SEMESTERS.findIndex(s => s.id === cutoff) + 1).map(s => {
+    const semester = state.semesters[s.id];
+    const subjects = semester.subjects.filter(row => row.included);
+    // 목표의 선택 외국어는 과목 한 개의 성취도와 원점수로 계산한다.
+    const general = calculateSemester({ ...semester, language: semester.language || '생활일본어' }, s);
     const arts = calculateArts(state.semesters, [s]);
-    return { ...s, complete: result.general.find(term => term.id === s.id).complete && (!arts.count || arts.complete) };
+    const generalStarted = subjects.some(row => row.achievement !== '' || row.raw !== '');
+    const artsStarted = semester.arts.some(row => row.included && row.achievement !== '');
+    return {
+      ...s, count: general.count, generalScore: general.score, generalStarted,
+      generalComplete: general.complete, artsStarted, artsComplete: !arts.count || arts.complete,
+      artsCount: arts.count, complete: general.complete && (!arts.count || arts.complete),
+    };
   });
-  const academicScore = result.generalTotal === null || result.arts.score === null ? null : result.generalTotal + result.arts.score;
-  // 현재까지의 실제 성적과 미래 목표 성적을 합산한다. 비교과 조건은 현재 보정과 동일하게 유지한다.
+  const generalValid = forecast.generalEarned !== null && future.every(s => s.count > 0 && (!s.generalStarted || s.generalComplete));
+  const targetGeneral = future.reduce((sum, s) => sum + (s.generalStarted ? s.generalScore ?? 0 : 0), 0);
+  const maintainedMax = future.filter(s => !s.generalStarted).reduce((sum, s) => sum + s.max * 1000, 0);
+  // 한 번에 반올림해 목표가 없는 경우 현재 유지 보정값과 일치시킨다.
+  const generalScore = generalValid ? Math.round(forecast.generalEarned + targetGeneral + forecast.generalEarned * maintainedMax / forecast.generalMax) : null;
+  const arts = calculateArts(state.semesters);
+  const maintainedArts = future.filter(s => !s.artsStarted).reduce((sum, s) => sum + s.artsCount, 0);
+  const currentWeight = 3 * forecast.arts.counts.A + 2 * forecast.arts.counts.B + forecast.arts.counts.C;
+  const targetWeight = 3 * arts.counts.A + 2 * arts.counts.B + arts.counts.C;
+  const artsValid = arts.count > 0 && forecast.arts.entered === forecast.arts.count && future.every(s => !s.artsStarted || s.artsComplete) && (!maintainedArts || forecast.arts.complete);
+  arts.complete = artsValid;
+  arts.score = artsValid ? Math.round(10000 + 20000 * (targetWeight + (maintainedArts ? currentWeight * maintainedArts / forecast.arts.count : 0)) / (3 * arts.count)) : null;
+  const academicScore = generalScore === null || arts.score === null ? null : generalScore + arts.score;
   const total = academicScore === null || forecast.attendanceScore === null || forecast.activities.score === null ? null : academicScore + forecast.attendanceScore + forecast.activities.score;
   return {
-    generalScore: result.generalTotal, arts: result.arts, academicScore, future, total,
+    generalScore, arts, academicScore, future, total,
     difference: total === null || forecast.total === null ? null : total - forecast.total,
   };
 }
