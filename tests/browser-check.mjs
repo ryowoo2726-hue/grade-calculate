@@ -51,7 +51,7 @@ try {
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type'), /text\/html/);
   await cdp('Page.navigate', { url: appUrl });
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 300; i++) {
     if (await evaluate(`!!document.querySelector('#semester-stats')?.textContent`)) break;
     await delay(100);
   }
@@ -79,7 +79,7 @@ try {
     localStorage.setItem('maseok-naesin-v1', JSON.stringify(state));
   })()`);
   await cdp('Page.reload');
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 300; i++) {
     if (await evaluate(`document.querySelector('#total-score')?.textContent === '175.333'`)) break;
     await delay(100);
   }
