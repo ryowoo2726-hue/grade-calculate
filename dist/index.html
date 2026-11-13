@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#087e72">
+  <meta name="description" content="현재까지의 성적으로 최종 내신 예상 점수를 계산합니다.">
+  <title>마석 내신 계산기</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main id="main">
+    <h1>내신 계산기</h1>
+    <div class="estimate-banner"><label class="cutoff-label">성적이 나온 학기<select id="cutoff" aria-label="예상 점수 기준 학기"></select></label></div>
+    <div class="content-grid">
+      <section class="card editor-card" aria-label="성적 입력">
+        <div class="editor-tabs" role="tablist" aria-label="입력 영역">
+          <button id="tab-subjects" role="tab" aria-controls="editor-panel" aria-selected="true" data-tab="subjects">현재 성적</button>
+          <button id="tab-targets" role="tab" aria-controls="editor-panel" aria-selected="false" tabindex="-1" data-tab="targets">목표 성적</button>
+          <button id="tab-attendance" role="tab" aria-controls="editor-panel" aria-selected="false" tabindex="-1" data-tab="attendance">출결</button>
+          <button id="tab-activities" role="tab" aria-controls="editor-panel" aria-selected="false" tabindex="-1" data-tab="activities">학교활동</button>
+        </div>
+        <div id="editor-panel" role="tabpanel" aria-labelledby="tab-subjects"></div>
+      </section>
+      <aside class="results-column" aria-label="예상 점수">
+        <section class="score-card">
+          <div class="score-card-top"><strong>최종 점수 비교</strong><span id="score-status" class="score-status">입력 중</span></div>
+          <div class="score-main"><h2>현재 성적 유지 시</h2><div class="score-value"><strong id="total-score">—</strong><span>/ 200</span></div><p id="score-caption"></p></div>
+          <div class="academic-preview" id="academic-preview"><span>교과 보정 점수</span><div><strong id="academic-score">—</strong><small> / 150점</small></div></div>
+          <div class="target-result" id="target-result"><h2>목표 성적 달성 시</h2><div class="score-value"><strong id="target-total-score">—</strong><span>/ 200</span></div><p id="target-difference"></p><div class="target-academic">목표 교과 <strong id="target-academic-score">—</strong> / 150점</div><p id="target-caption"></p></div>
+          <div class="score-divider"></div><div id="score-breakdown"></div>
+        </section>
+      </aside>
+    </div>
+    <p class="storage-note" id="storage-status"></p>
+    <details class="card forecast-card" id="forecast-summary"><summary>보정 계산 과정 보기</summary><div id="forecast-details"></div></details>
+  </main>
+  <button class="mobile-score" data-action="summary"><span><small id="mobile-score-label">예상 최종 점수</small><strong id="mobile-total">—</strong><small>/ 200</small></span><span>결과 보기 ↑</span></button>
+  <div id="toast" class="toast" role="status"></div>
+  <noscript><p class="noscript">계산하려면 브라우저에서 JavaScript를 허용해 주세요.</p></noscript>
+</body>
+</html>
